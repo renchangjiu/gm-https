@@ -1,8 +1,8 @@
-package cc.kkon.gmhttps.server;
+package cc.kkon.gmhttps.utils;
 
 import java.io.*;
 
-class ReadLine {
+public class ReadLine {
     public static final byte[] CRLF = {'\r', '\n'};
     public static final byte CR = '\r';
     public static final byte LF = '\n';

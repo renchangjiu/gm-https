@@ -1,21 +1,26 @@
 package cc.kkon;
 
-import cc.kkon.gmhttps.server.DefaultHttpServlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.UUID;
 
-public class TestServlet1 extends DefaultHttpServlet {
+@WebServlet("get1")
+public class TestServlet1 extends HttpServlet {
 
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("get");
+        System.out.println("Thread.currentThread().getName() = " + Thread.currentThread().getName());
+        System.out.println("get request......");
+        Map<String, String[]> parameterMap = req.getParameterMap();
+
         this.doPost(req, resp);
     }
 

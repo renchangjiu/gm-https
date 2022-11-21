@@ -16,23 +16,40 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class SSLRequests {
 
-    private static final HttpClient client;
+    private final HttpClient client;
 
-    private static final String ENCODING = "UTF-8";
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
 
     private static final int timeout = 30 * 1000;
 
-    static {
-        client = ClientBuilder.initGMSSL();
+
+    /**
+     * 单向认证
+     */
+    public SSLRequests() {
+        this.client = ClientBuilder.initGMSSL();
     }
 
-    public static Response0 post(String url, Map<String, String> params, Map<String, String> headers) throws IOException {
+    /**
+     * 双向认证
+     *
+     * @param cert 证书
+     * @param pwd  证书密码
+     */
+    public SSLRequests(InputStream cert, String pwd) {
+        this.client = ClientBuilder.initGMSSL(cert, pwd);
+    }
+
+    public Response0 post(String url, Map<String, String> params, Map<String, String> headers) throws IOException {
         HttpPost httpPost = new HttpPost(url);
         httpPost.setProtocolVersion(HttpVersion.HTTP_1_1);
         putHeaders(httpPost, headers);
@@ -47,7 +64,7 @@ public class SSLRequests {
             }
         }
 
-        httpPost.setEntity(new UrlEncodedFormEntity(list, ENCODING));
+        httpPost.setEntity(new UrlEncodedFormEntity(list, CHARSET));
 
         HttpResponse response = client.execute(httpPost);
         Response0 res0 = new Response0(response);
@@ -55,7 +72,7 @@ public class SSLRequests {
         return res0;
     }
 
-    public static Response0 post4json(String url, String json, Map<String, String> headers) throws IOException {
+    public Response0 post4json(String url, String json, Map<String, String> headers) throws IOException {
         HttpPost httpPost = new HttpPost(url);
         httpPost.setProtocolVersion(HttpVersion.HTTP_1_1);
         putHeaders(httpPost, headers);
@@ -70,12 +87,12 @@ public class SSLRequests {
         return res0;
     }
 
-    public static Response0 get(String url) throws IOException {
+    public Response0 get(String url) throws IOException {
         return get(url, null, null);
     }
 
-    public static Response0 get(String url, Map<String, String> params, Map<String, String> headers) throws IOException {
-        HttpGet httpGet = null;
+    public Response0 get(String url, Map<String, String> params, Map<String, String> headers) throws IOException {
+        HttpGet httpGet;
         try {
             URIBuilder uriBuilder = new URIBuilder(url);
             // 设置请求参数

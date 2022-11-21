@@ -1,4 +1,4 @@
-package cc.kkon.gmhttps.server;
+package cc.kkon.gmhttps.server.core;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;

@@ -1,4 +1,4 @@
-package cc.kkon.gmhttps.server;
+package cc.kkon.gmhttps.server.core;
 
 import cc.kkon.gmhttps.model.FirstLine;
 import cc.kkon.gmhttps.utils.Strings;

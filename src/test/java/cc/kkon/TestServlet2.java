@@ -1,10 +1,9 @@
 package cc.kkon;
 
-import cc.kkon.gmhttps.server.DefaultHttpServlet;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -12,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @WebServlet("/post2")
-public class TestServlet2 extends DefaultHttpServlet {
+public class TestServlet2 extends HttpServlet {
 
 
     @Override
@@ -30,7 +29,7 @@ public class TestServlet2 extends DefaultHttpServlet {
         String post2 = req.getParameter("post2");
         String token = req.getHeader("token");
 
-     // req.get
+        // req.get
 
         resp.setHeader("app-id", UUID.randomUUID().toString());
         ServletOutputStream out = resp.getOutputStream();

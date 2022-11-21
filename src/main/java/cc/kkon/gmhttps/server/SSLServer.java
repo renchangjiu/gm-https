@@ -2,23 +2,32 @@ package cc.kkon.gmhttps.server;
 
 
 import cc.kkon.gmhttps.client.TrustAllManager;
+import cc.kkon.gmhttps.server.core.DefaultHttpServletRequest;
+import cc.kkon.gmhttps.server.core.DefaultHttpServletResponse;
+import cc.kkon.gmhttps.utils.ReadLine;
 import cc.kkon.gmhttps.utils.Strings;
 import cc.kkon.gmhttps.utils.Utils;
+import cn.gmssl.jce.provider.GMJCE;
+import cn.gmssl.jsse.provider.GMJSSE;
 import org.apache.commons.io.IOUtils;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.*;
+import javax.security.cert.X509Certificate;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
-import java.net.Socket;
+import java.net.SocketException;
 import java.security.KeyStore;
-import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 单向认证
@@ -27,37 +36,48 @@ import java.util.Map;
  */
 public class SSLServer {
 
-    private int port;
+    private final int port;
 
-    private InputStream cert;
+    private final InputStream cert;
 
-    private String certPassword;
+    private final String certPassword;
 
-    private Map<String, DefaultHttpServlet> servlets;
+    private final ExecutorService threadPool;
+
+
+    private final Map<String, HttpServlet> servlets;
+
+    private final boolean twoWayAuth;
+
+
+    private Runner0 runner0;
 
     private volatile boolean closed;
 
 
-    public SSLServer(int port, InputStream cert, String certPassword) {
+    public SSLServer(int port, InputStream cert, String certPassword, boolean twoWayAuth) {
         this.port = port;
         this.cert = cert;
         this.certPassword = certPassword;
+        this.twoWayAuth = twoWayAuth;
+        this.threadPool = Executors.newFixedThreadPool(20);
         this.servlets = new HashMap<>();
+        this.runner0 = new Runner0();
     }
 
-    public void listen() throws Exception {
-        Thread thread = new Thread(new Runner0());
+    public void listen() {
+        Thread thread = new Thread(this.runner0);
         System.out.println("SSLServer started.");
         thread.start();
     }
 
-    public void addServlet(String urlPattern, DefaultHttpServlet servlet) {
+    public void addServlet(String urlPattern, HttpServlet servlet) {
         this.check(urlPattern);
         this.servlets.put(urlPattern, servlet);
     }
 
-    public void addServlet(DefaultHttpServlet servlet) {
-        Class<? extends DefaultHttpServlet> clazz = servlet.getClass();
+    public void addServlet(HttpServlet servlet) {
+        Class<? extends HttpServlet> clazz = servlet.getClass();
         WebServlet anno = clazz.getAnnotation(WebServlet.class);
         String[] value = anno.value();
         for (String val : value) {
@@ -85,7 +105,7 @@ public class SSLServer {
         }
 
         SSLContext ctx = SSLContext.getInstance("GMSSLv1.1", "GMJSSE");
-        java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+        SecureRandom secureRandom = new SecureRandom();
         ctx.init(kms, trust, secureRandom);
 
         ctx.getServerSessionContext().setSessionCacheSize(8192);
@@ -96,10 +116,16 @@ public class SSLServer {
 
     public void close() {
         this.closed = true;
+        IOUtils.closeQuietly(this.cert);
+        this.threadPool.shutdown();
+        this.runner0.close();
         System.out.println("SSLServer closed.");
     }
 
     private class Runner0 implements Runnable {
+
+
+        private SSLServerSocket sslServerSocket;
 
         @Override
         public void run() {
@@ -111,80 +137,98 @@ public class SSLServer {
         }
 
         private void listen() throws Exception {
-            ServerSocketFactory fact = null;
-            SSLServerSocket sslServerSocket = null;
-
-            System.out.println("Usage: java -cp GMExample.jar server.Server1 port");
-
-            System.out.println("Port=" + port);
-
-            Security.insertProviderAt((Provider) Class.forName("cn.gmssl.jce.provider.GMJCE").newInstance(), 1);
-            Security.insertProviderAt((Provider) Class.forName("cn.gmssl.jsse.provider.GMJSSE").newInstance(), 2);
+            Security.insertProviderAt(new GMJCE(), 1);
+            Security.insertProviderAt(new GMJSSE(), 2);
 
             KeyStore pfx = KeyStore.getInstance("PKCS12", "GMJSSE");
             char[] certPwdBytes = certPassword.toCharArray();
             pfx.load(cert, certPwdBytes);
 
-            fact = createServerSocketFactory(pfx, certPwdBytes);
+            ServerSocketFactory fact = createServerSocketFactory(pfx, certPwdBytes);
             sslServerSocket = (SSLServerSocket) fact.createServerSocket(port);
+
+            sslServerSocket.setNeedClientAuth(twoWayAuth);
 
             System.out.println("listening...");
 
             while (!closed) {
-                Socket socket = null;
                 try {
-                    socket = sslServerSocket.accept();
-                    System.out.println("client comes");
-
-                    DataInputStream in = new DataInputStream(socket.getInputStream());
-                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-                    boolean get = false;
-                    LinkedList<String> reqHeadLines = new LinkedList<>();
-                    while (true) {
-                        byte[] lineBuf = ReadLine.read(in);
-                        if (lineBuf == null || lineBuf.length == 0) {
-                            break;
-                        }
-                        String line = new String(lineBuf);
-                        System.out.println(line);
-                        if (!get) {
-                            get = line.startsWith("GET ");
-                        }
-                        reqHeadLines.add(line);
-                    }
-                    String contentLength = Utils.buildHeaders(reqHeadLines).get("Content-Length");
-
-                    byte[] buf = new byte[0];
-                    // 请求体
-                    if (!get && Strings.isNotEmpty(contentLength)) {
-                        int len = Integer.parseInt(contentLength);
-                        buf = new byte[len];
-                        int readLen = in.read(buf);
-                        System.out.println(new String(buf, 0, len));
-                    }
-
-
-                    DefaultHttpServletRequest req = new DefaultHttpServletRequest(reqHeadLines, buf);
-                    DefaultHttpServletResponse res = new DefaultHttpServletResponse();
-
-                    String reqURI = req.getRequestURI();
-                    DefaultHttpServlet servlet = servlets.get(reqURI);
-                    if (servlet == null) {
-                        // TODO: 404 servlet
-                    }
-                    servlet.service(req, res);
-
-                    byte[] message = res.buildResponseMessage();
-                    out.write(message);
-                    out.flush();
-                    System.out.println("\n\n\n");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    IOUtils.close(socket);
+                    SSLSocket socket = (SSLSocket) sslServerSocket.accept();
+                    threadPool.execute(() -> {
+                        this.processConnect(socket);
+                    });
+                } catch (SocketException e) {
+                    System.out.println("SSLServerSocket closed, " + port + " released.");
                 }
             }
+        }
+
+        private void processConnect(SSLSocket socket) {
+            try {
+                System.out.println("client comes");
+
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+                boolean get = false;
+                LinkedList<String> reqHeadLines = new LinkedList<>();
+                System.out.println("Request headers: ");
+                while (true) {
+                    byte[] lineBuf = ReadLine.read(in);
+                    if (lineBuf == null || lineBuf.length == 0) {
+                        break;
+                    }
+                    String line = new String(lineBuf);
+                    System.out.println("\t" + line);
+                    if (!get) {
+                        get = line.startsWith("GET ");
+                    }
+                    reqHeadLines.add(line);
+                }
+                System.out.println();
+
+                String contentLength = Utils.buildHeaders(reqHeadLines).get("Content-Length");
+
+                byte[] buf = new byte[0];
+                // 请求体
+                if (!get && Strings.isNotEmpty(contentLength)) {
+                    int len = Integer.parseInt(contentLength);
+                    buf = new byte[len];
+                    in.read(buf);
+                    System.out.println(new String(buf, 0, len));
+                }
+
+
+                DefaultHttpServletRequest req = new DefaultHttpServletRequest(reqHeadLines, buf);
+                DefaultHttpServletResponse res = new DefaultHttpServletResponse();
+
+                String reqURI = req.getRequestURI();
+                HttpServlet servlet = servlets.get(reqURI);
+                if (servlet == null) {
+                    // TODO: 404 servlet
+                }
+                servlet.service(req, res);
+
+                byte[] message = res.buildResponseMessage();
+                out.write(message);
+                out.flush();
+                if (twoWayAuth) {
+                    X509Certificate[] cs = socket.getSession().getPeerCertificateChain();
+                    System.out.println("client certs len=" + cs.length);
+                    for (X509Certificate c : cs) {
+                        System.out.println(c);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            } finally {
+                IOUtils.closeQuietly(socket);
+            }
+        }
+
+        public void close() {
+            IOUtils.closeQuietly(sslServerSocket);
         }
     }
 }
