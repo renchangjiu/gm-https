@@ -1,15 +1,22 @@
-# gm-https
-支持国密 https 的<b>低</b>性能 servlet 容器。
+package cc.kkon;
 
-<b>有限</b>支持 servlet 规范。
 
-性能较差，<b>不建议</b>用在正式环境。
+import cc.kkon.gmhttps.client.Response0;
+import cc.kkon.gmhttps.client.SSLRequests;
+import cc.kkon.gmhttps.server.SSLServer;
+import org.junit.Test;
 
-项目依赖的 gmssl_provider 来自 [https://gmssl.cn/gmssl](https://gmssl.cn/gmssl)。*官网说明：免费版本每年年底失效，程序会自动退出，需更新库，重新链接。请勿用于正式/生产环境，后果自负。*
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-#### 一、用法
-##### 1. client 端
-```java
+/**
+ * Unit test for simple App.
+ */
+public class AppTest {
+
+
     @Test
     public void testClient() throws Exception {
         String url = "";
@@ -39,33 +46,22 @@
         Response0 r3 = SSLRequests.post4json(url, json, headers);
         System.out.println();
     }
-```
 
-##### 2. server 端
-```java
     @Test
     public void testServer() throws Exception {
         String cert = "keystore/sm2.server1.both.pfx";
-        cert = "sm2.auth1/sm2.auth1.both.pfx";
+        cert = "certs/sm2.auth1.both.pfx";
         InputStream in = getClass().getClassLoader().getResourceAsStream(cert);
         String pwd = "12345678";
         SSLServer server = new SSLServer(4430, in, pwd);
 
         server.addServlet("/get1", new TestServlet1());
         server.addServlet(new TestServlet2());
-		
-        // 异步
+
         server.listen();
 
         Thread.currentThread().join();
     }
-```
 
 
-#### 二、maven 坐标
-
-```xml
-<groupId>cc.kkon</groupId>
-<artifactId>gm-https</artifactId>
-<version>0.1.1</version>
-```
+}
