@@ -69,5 +69,5 @@
 ```xml
 <groupId>cc.kkon</groupId>
 <artifactId>gm-https</artifactId>
-<version>0.1.1</version>
+<version>0.2</version>
 ```
