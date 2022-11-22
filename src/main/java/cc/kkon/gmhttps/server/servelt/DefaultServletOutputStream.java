@@ -1,4 +1,4 @@
-package cc.kkon.gmhttps.server.core;
+package cc.kkon.gmhttps.server.servelt;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;

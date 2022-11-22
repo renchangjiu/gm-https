@@ -1,6 +1,7 @@
 package cc.kkon.gmhttps.client;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -32,7 +33,11 @@ public class Response0 {
     }
 
     public String getHeader(String key) {
-        HeaderElement[] elements = httpResponse.getFirstHeader(key).getElements();
+        Header firstHeader = httpResponse.getFirstHeader(key);
+        if (firstHeader == null) {
+            return null;
+        }
+        HeaderElement[] elements = firstHeader.getElements();
         if (elements != null && elements.length != 0) {
             return elements[0].getName();
         }

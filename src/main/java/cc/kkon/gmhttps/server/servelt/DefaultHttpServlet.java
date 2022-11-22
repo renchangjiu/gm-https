@@ -1,4 +1,4 @@
-package cc.kkon.gmhttps.server.core;
+package cc.kkon.gmhttps.server.servelt;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

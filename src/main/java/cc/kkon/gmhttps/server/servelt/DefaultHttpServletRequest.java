@@ -1,5 +1,6 @@
-package cc.kkon.gmhttps.server.core;
+package cc.kkon.gmhttps.server.servelt;
 
+import cc.kkon.gmhttps.model.CC;
 import cc.kkon.gmhttps.model.FirstLine;
 import cc.kkon.gmhttps.utils.Strings;
 import cc.kkon.gmhttps.utils.Utils;
@@ -17,36 +18,38 @@ public class DefaultHttpServletRequest implements HttpServletRequest {
 
     private final FirstLine fl;
 
-    private Map<String, String> headers;
+    private final Map<String, String> headers;
 
-    private Map<String, String> urlParams;
+    private final Map<String, List<String>> params;
 
-    private Map<String, String> bodyParams;
-
-    private byte[] body;
+    private final byte[] body;
 
 
     public DefaultHttpServletRequest(List<String> headLines, byte[] body) {
         String firstLine = headLines.remove(0);
         this.fl = Utils.parse1stLine(firstLine);
         this.headers = Utils.buildHeaders(headLines);
-        this.urlParams = new HashMap<>();
-        this.bodyParams = new HashMap<>();
+        Map<String, List<String>> urlParams = null;
+        Map<String, List<String>> bodyParams = null;
         this.body = body;
         String url = this.fl.url;
         if (url.contains("?")) {
             String paramsStr = url.split("\\?")[1];
-            this.urlParams = Utils.parseParams(paramsStr);
+            urlParams = Utils.parseParams(paramsStr);
         }
         String type = this.getContentType();
         if (body.length != 0 && Strings.isNotBlank(type)) {
-            if (type.startsWith("application/x-www-form-urlencoded")) {
+            if (type.startsWith(CC.CONTENT_TYPE_URLENCODED)) {
                 String con = new String(body, StandardCharsets.UTF_8);
-                this.bodyParams = Utils.parseParams(con);
+                bodyParams = Utils.parseParams(con);
             }
         }
+        this.params = Utils.merge(urlParams, bodyParams);
     }
 
+    /**
+     * 在 json 格式的请求中, 获取请求体
+     */
     public byte[] getBody() {
         return body;
     }
@@ -63,7 +66,7 @@ public class DefaultHttpServletRequest implements HttpServletRequest {
 
     @Override
     public long getDateHeader(String s) {
-        return 0;
+        throw new RuntimeException("Not support now");
     }
 
     @Override
@@ -73,19 +76,22 @@ public class DefaultHttpServletRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getHeaders(String s) {
-        return null;
+        throw new RuntimeException("Not support now");
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        return null;
+        return Collections.enumeration(this.headers.keySet());
     }
 
     @Override
     public int getIntHeader(String s) {
-        return 0;
+        throw new RuntimeException("Not support now");
     }
 
+    /**
+     * uppercase, like: GET,POST...
+     */
     @Override
     public String getMethod() {
         return this.fl.method;
@@ -93,7 +99,7 @@ public class DefaultHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getPathInfo() {
-        return null;
+        throw new RuntimeException("Not support now");
     }
 
     @Override
@@ -259,29 +265,33 @@ public class DefaultHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getParameter(String s) {
-        String met = this.getMethod().toUpperCase();
-        if (met.equals("GET")) {
-            return this.urlParams.get(s);
-        } else if (met.equals("POST")) {
-            return this.bodyParams.get(s);
-        } else {
-            throw new RuntimeException("Not supported method: " + met);
+        if (this.params.containsKey(s)) {
+            return this.params.get(s).get(0);
         }
+        return null;
     }
 
     @Override
     public Enumeration<String> getParameterNames() {
-        return null;
+        return Collections.enumeration(this.params.keySet());
     }
 
     @Override
     public String[] getParameterValues(String s) {
-        return new String[0];
+        List<String> val = this.params.get(s);
+        if (val == null) {
+            return null;
+        }
+        return val.toArray(new String[0]);
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        return null;
+        Map<String, String[]> res = new HashMap<>();
+        for (Map.Entry<String, List<String>> ent : params.entrySet()) {
+            res.put(ent.getKey(), ent.getValue().toArray(new String[0]));
+        }
+        return res;
     }
 
     @Override

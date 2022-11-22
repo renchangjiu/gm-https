@@ -1,11 +1,11 @@
-package cc.kkon.gmhttps.server.core;
+package cc.kkon.gmhttps.server.servelt;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -15,9 +15,13 @@ import java.util.Map;
 
 public class DefaultHttpServletResponse implements HttpServletResponse {
 
-    private Map<String, String> headers;
+    private int status = 200;
 
-    private DefaultServletOutputStream out;
+    private String contentType = "text/html;charset=UTF-8";
+
+    private final Map<String, String> headers;
+
+    private final DefaultServletOutputStream out;
 
     public DefaultHttpServletResponse() {
         this.headers = new HashMap<>();
@@ -101,7 +105,7 @@ public class DefaultHttpServletResponse implements HttpServletResponse {
 
     @Override
     public void setStatus(int sc) {
-
+        this.status = sc;
     }
 
     @Override
@@ -111,7 +115,7 @@ public class DefaultHttpServletResponse implements HttpServletResponse {
 
     @Override
     public int getStatus() {
-        return 0;
+        return this.status;
     }
 
     @Override
@@ -136,7 +140,7 @@ public class DefaultHttpServletResponse implements HttpServletResponse {
 
     @Override
     public String getContentType() {
-        return "text/plain";
+        return this.contentType;
     }
 
     @Override
@@ -166,7 +170,7 @@ public class DefaultHttpServletResponse implements HttpServletResponse {
 
     @Override
     public void setContentType(String type) {
-
+        this.contentType = type;
     }
 
     @Override
@@ -212,10 +216,10 @@ public class DefaultHttpServletResponse implements HttpServletResponse {
 
     public byte[] buildResponseMessage() {
         byte[] bodyBytes = this.out.toByteArray();
-        StringBuilder head = new StringBuilder("HTTP/1.1 200 OK\r\n" +
+        StringBuilder head = new StringBuilder("HTTP/1.1 " + this.getStatus() + " OK\r\n" +
                 "Server: GMSSL/1.0\r\n" +
                 "Content-Length:" + bodyBytes.length + "\r\n" +
-                "Content-Type: text/plain\r\n");
+                "Content-Type: " + this.getContentType() + "\r\n");
         for (Map.Entry<String, String> ent : headers.entrySet()) {
             head.append(ent.getKey()).append(": ").append(ent.getValue()).append("\r\n");
         }

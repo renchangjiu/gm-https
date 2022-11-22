@@ -1,9 +1,9 @@
 # gm-https
-支持国密 https 的<b>低</b>性能 servlet 容器。
+支持国密 https 的<b>低</b>性能 servlet 容器。支持单向认证及双向认证。
 
 <b>有限</b>支持 servlet 规范。
 
-性能较差，<b>不建议</b>用在正式环境。
+<b>不建议</b>用在正式环境。
 
 项目依赖的 gmssl_provider 来自 [https://gmssl.cn/gmssl](https://gmssl.cn/gmssl)。*官网说明：免费版本每年年底失效，程序会自动退出，需更新库，重新链接。请勿用于正式/生产环境，后果自负。*
 
@@ -60,6 +60,8 @@
         Thread.currentThread().join();
     }
 ```
+
+##### 3. 详细用法参考测试用例
 
 
 #### 二、maven 坐标

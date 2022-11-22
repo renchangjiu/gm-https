@@ -8,8 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @WebServlet("get1")
 public class TestServlet1 extends HttpServlet {
@@ -18,25 +17,27 @@ public class TestServlet1 extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("Thread.currentThread().getName() = " + Thread.currentThread().getName());
-        System.out.println("get request......");
+        System.out.println("------get request------");
+
         Map<String, String[]> parameterMap = req.getParameterMap();
+        for (Map.Entry<String, String[]> ent : parameterMap.entrySet()) {
+            System.out.println("ent.getKey() = " + ent.getKey());
+            System.out.println("ent.getValue() = " + Arrays.toString(ent.getValue()));
+        }
+        System.out.println();
 
-        this.doPost(req, resp);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("post");
-        String ip = req.getParameter("ip");
-        String pwd = req.getParameter("pwd");
-        String post1 = req.getParameter("post1");
-        String post2 = req.getParameter("post2");
-        String token = req.getHeader("token");
+        ArrayList<String> headerNames = Collections.list(req.getHeaderNames());
+        for (String headerName : headerNames) {
+            System.out.println("headerName = " + headerName);
+            System.out.println("req.getHeader(headerName) = " + req.getHeader(headerName));
+        }
+        System.out.println();
 
         resp.setHeader("app-id", UUID.randomUUID().toString());
         ServletOutputStream out = resp.getOutputStream();
         out.write("Hello 世界!".getBytes(StandardCharsets.UTF_8));
         out.flush();
-        System.out.println();
     }
+
+
 }

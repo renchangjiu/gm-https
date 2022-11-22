@@ -22,6 +22,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * 请求工具类, 线程不安全
+ */
 public class SSLRequests {
 
     private final HttpClient client;
