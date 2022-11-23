@@ -1,6 +1,6 @@
 package cc.kkon.gmhttps.client;
 
-import org.apache.commons.io.IOUtils;
+import cc.kkon.gmhttps.utils.Utils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
@@ -26,8 +26,7 @@ public class Response0 {
         HttpEntity entity = httpResponse.getEntity();
         if (entity != null) {
             InputStream in = entity.getContent();
-
-            this.content = IOUtils.toString(in, StandardCharsets.UTF_8);
+            this.content = Utils.toString(in, StandardCharsets.UTF_8);
             in.close();
         }
     }

@@ -1,7 +1,6 @@
 package cc.kkon.gmhttps.server.servelt;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import cc.kkon.gmhttps.utils.Utils;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -225,8 +224,8 @@ public class DefaultHttpServletResponse implements HttpServletResponse {
         }
         head.append("Connection: close\r\n\r\n");
         byte[] headBytes = head.toString().getBytes();
-        byte[] bytes = ArrayUtils.addAll(headBytes, bodyBytes);
-        IOUtils.closeQuietly(this.out);
+        byte[] bytes = Utils.addAll(headBytes, bodyBytes);
+        Utils.closeQuietly(this.out);
         return bytes;
     }
 }

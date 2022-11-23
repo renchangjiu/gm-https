@@ -1,6 +1,6 @@
 package cc.kkon.gmhttps.client;
 
-import org.apache.commons.collections4.MapUtils;
+import cc.kkon.gmhttps.utils.Utils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
@@ -60,7 +60,7 @@ public class SSLRequests {
          * 处理参数
          */
         List<NameValuePair> list = new ArrayList<>();
-        if (MapUtils.isNotEmpty(params)) {
+        if (Utils.isNotEmpty(params)) {
             Set<String> keySet = params.keySet();
             for (String key : keySet) {
                 list.add(new BasicNameValuePair(key, params.get(key)));

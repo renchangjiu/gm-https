@@ -4,7 +4,6 @@ import cc.kkon.gmhttps.model.ServerConfig;
 import cc.kkon.gmhttps.utils.Utils;
 import cn.gmssl.jce.provider.GMJCE;
 import cn.gmssl.jsse.provider.GMJSSE;
-import org.apache.commons.io.IOUtils;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -77,8 +76,8 @@ public class AcceptRunner implements Runnable, Closeable {
     @Override
     public void close() {
         this.closed = true;
-        IOUtils.closeQuietly(cfg.cert);
-        IOUtils.closeQuietly(sslServerSocket);
+        Utils.closeQuietly(cfg.cert);
+        Utils.closeQuietly(sslServerSocket);
         this.threadPool.shutdown();
     }
 }

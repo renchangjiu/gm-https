@@ -9,11 +9,13 @@ import cc.kkon.model.SysUser;
 import cc.kkon.utils.Jsons;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
@@ -153,8 +155,8 @@ public class AppTest {
 
         try {
             new SSLRequests().get(url);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
+        } catch (SocketException | SSLHandshakeException e) {
+            System.out.println("Missing or wrong client certificate(" + e.getMessage() + ")");
         }
         Thread.sleep(4000);
         server.close();
@@ -174,6 +176,5 @@ public class AppTest {
         Thread.sleep(4000);
         return server;
     }
-
 
 }

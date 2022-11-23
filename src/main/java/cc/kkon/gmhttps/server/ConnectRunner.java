@@ -6,7 +6,6 @@ import cc.kkon.gmhttps.server.servelt.DefaultHttpServletResponse;
 import cc.kkon.gmhttps.utils.ReadLine;
 import cc.kkon.gmhttps.utils.Strings;
 import cc.kkon.gmhttps.utils.Utils;
-import org.apache.commons.io.IOUtils;
 
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
@@ -45,7 +44,7 @@ public class ConnectRunner implements Runnable, Closeable {
         } catch (ServletException | IOException e) {
             throw new RuntimeException(e);
         } finally {
-            IOUtils.closeQuietly(socket);
+            Utils.closeQuietly(socket);
         }
     }
 
@@ -102,7 +101,7 @@ public class ConnectRunner implements Runnable, Closeable {
             byte[] bytes = resp.buildResponseMessage();
             this.out.write(bytes);
             this.out.flush();
-            IOUtils.closeQuietly(this.out);
+            Utils.closeQuietly(this.out);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

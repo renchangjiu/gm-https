@@ -1,9 +1,9 @@
 package cc.kkon.gmhttps.server.servelt;
 
+import cc.kkon.gmhttps.utils.Utils;
+
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
-import org.apache.commons.io.IOUtils;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -36,7 +36,7 @@ public class DefaultServletOutputStream extends ServletOutputStream {
 
     @Override
     public void close() throws IOException {
-        IOUtils.close(this.out);
+        Utils.closeQuietly(this.out);
     }
 
     public byte[] toByteArray() {

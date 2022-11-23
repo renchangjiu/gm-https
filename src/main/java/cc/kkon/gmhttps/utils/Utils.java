@@ -4,6 +4,8 @@ import cc.kkon.gmhttps.client.TrustAllManager;
 import cc.kkon.gmhttps.model.FirstLine;
 
 import javax.net.ssl.*;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -96,4 +98,48 @@ public class Utils {
     }
 
 
+    public static void closeQuietly(final Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static String toString(final InputStream input, final Charset charset) throws IOException {
+        BufferedInputStream bi = new BufferedInputStream(input);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int len;
+        byte[] bytes = new byte[1024 * 8];
+        while ((len = bi.read(bytes)) != -1) {
+            out.write(bytes, 0, len);
+        }
+        String res = out.toString(charset.name());
+        bi.close();
+        out.close();
+        return res;
+    }
+
+    public static boolean isNotEmpty(final Map<?, ?> map) {
+        return !isEmpty(map);
+    }
+
+    public static boolean isEmpty(final Map<?, ?> map) {
+        return map == null || map.isEmpty();
+    }
+
+    public static byte[] addAll(byte[] array1, byte[] array2) {
+        if (array1 == null) {
+            array1 = new byte[0];
+        }
+        if (array2 == null) {
+            array2 = new byte[0];
+        }
+        final byte[] joinedArray = new byte[array1.length + array2.length];
+        System.arraycopy(array1, 0, joinedArray, 0, array1.length);
+        System.arraycopy(array2, 0, joinedArray, array1.length, array2.length);
+        return joinedArray;
+    }
 }
